@@ -289,7 +289,35 @@
     .lc-act-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(200,245,66,.05)}
     .lc-act-btn.wa:hover{border-color:var(--green);color:var(--green);background:rgba(66,245,126,.05)}
 
-    @media(max-width:1150px){.kanban{grid-template-columns:repeat(3,1fr)}.charts-grid{grid-template-columns:1fr}.cal-layout{grid-template-columns:1fr}.mem-layout{grid-template-columns:1fr}}
+    /* ATTENDANCE */
+    .att-toggle{padding:5px 12px;border-radius:6px;border:1px solid;cursor:pointer;font-size:11.5px;font-family:'DM Mono',monospace;font-weight:500;display:inline-flex;align-items:center;gap:5px;transition:all .18s}
+    .att-present{background:rgba(66,245,126,.1);color:var(--green);border-color:rgba(66,245,126,.3)}
+    .att-present:hover{background:rgba(66,245,126,.2)}
+    .att-absent{background:transparent;color:var(--muted);border-color:var(--border)}
+    .att-absent:hover{background:rgba(200,245,66,.05);border-color:var(--accent);color:var(--accent)}
+    .att-dot{width:5px;height:5px;border-radius:50%;background:currentColor;flex-shrink:0}
+    .att-bar-bg{flex:1;height:5px;border-radius:3px;background:var(--border)}
+    .att-bar-fill{height:5px;border-radius:3px;background:var(--green);transition:width .4s}
+    .att-bar{display:flex;align-items:center;gap:7px}
+
+    /* EXPENSES */
+    .exp-layout{display:grid;grid-template-columns:1fr 260px;gap:14px;align-items:start}
+    .exp-cat-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+    .cat-row{display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px}
+    .cat-row:last-child{border-bottom:none}
+    .cat-amt{font-family:'Syne',sans-serif;font-weight:700;font-size:13px;margin-left:auto}
+    .exp-total-box{background:var(--s2);border-radius:9px;padding:13px;margin-bottom:12px;text-align:center}
+    .exp-total-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px}
+    .exp-total-val{font-family:'Syne',sans-serif;font-weight:800;font-size:26px;color:var(--red)}
+
+    /* RECEIPT */
+    .receipt-box{background:#fff;color:#111;padding:24px;border-radius:8px;font-family:'DM Mono',monospace;font-size:12px}
+    .receipt-head{text-align:center;margin-bottom:16px;padding-bottom:14px;border-bottom:2px dashed #ddd}
+    .receipt-gym{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:#111;margin-bottom:2px}
+    .receipt-row{display:flex;justify-content:space-between;margin-bottom:6px;padding:4px 0;border-bottom:1px solid #f0f0f0}
+    .receipt-row.total{border-top:2px solid #111;border-bottom:none;margin-top:10px;padding-top:10px;font-weight:700;font-size:14px}
+
+    @media(max-width:1150px){.kanban{grid-template-columns:repeat(3,1fr)}.charts-grid{grid-template-columns:1fr}.cal-layout{grid-template-columns:1fr}.mem-layout{grid-template-columns:1fr}.exp-layout{grid-template-columns:1fr}}
     @media(max-width:780px){.sidebar{width:52px}.logo h1,.logo span,.nav-item span,.sidebar-footer{display:none}.logo{padding:12px;justify-content:center}.logo-icon{margin:0}.nav-item{padding:10px;justify-content:center}.nav-item i{width:auto}.nav-badge{position:absolute;top:5px;right:5px}.kanban{grid-template-columns:repeat(2,1fr)}.form-row{grid-template-columns:1fr}}
   </style>
 </head>
@@ -308,6 +336,8 @@
     <div class="nav-item" onclick="nav('calendar')"><i class="fas fa-calendar-alt"></i><span>Holiday Calendar</span></div>
     <div class="nav-item" onclick="nav('leads')"><i class="fas fa-filter"></i><span>Lead Tracker</span><span class="nav-badge" id="leads-badge">0</span></div>
     <div class="nav-item" onclick="nav('whatsapp')"><i class="fab fa-whatsapp"></i><span>WhatsApp</span></div>
+    <div class="nav-item" onclick="nav('attendance')"><i class="fas fa-calendar-check"></i><span>Attendance</span></div>
+    <div class="nav-item" onclick="nav('expenses')"><i class="fas fa-receipt"></i><span>Expenses</span></div>
   </nav>
   <div class="sidebar-footer">GymOS v1.0</div>
 </aside>
@@ -496,6 +526,60 @@
     <div class="tab" onclick="filterTmpl('Event',this)">🎉 Events</div>
   </div>
   <div class="tmpl-grid" id="tmpl-container"></div>
+</section>
+
+<!-- ATTENDANCE -->
+<section id="sec-attendance" class="section">
+  <div class="page-header">
+    <div><h2>Attendance</h2><p>Daily member check-in tracking</p></div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <input type="date" class="fc" id="att-date" onchange="renderAttendance()" style="max-width:160px;padding:7px 10px">
+      <button class="btn btn-ghost" onclick="resetAttDate()"><i class="fas fa-calendar-day"></i> Today</button>
+    </div>
+  </div>
+  <div class="stats-grid" id="att-stats"></div>
+  <div class="filter-bar">
+    <input type="text" class="fc" id="att-search" placeholder="🔍  Search members…" oninput="renderAttendance()" style="flex:2;max-width:280px">
+    <select class="fc" id="att-plan-f" onchange="renderAttendance()" style="max-width:130px">
+      <option value="all">All Plans</option><option>Monthly</option><option>Quarterly</option><option>Annual</option>
+    </select>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>#</th><th>Member</th><th>Plan</th><th>Membership</th><th>Attendance</th><th>This Month</th></tr></thead>
+      <tbody id="att-tbody"></tbody>
+    </table>
+    <div class="empty" id="att-empty" style="display:none"><i class="fas fa-calendar-check"></i><p>No active members found</p></div>
+  </div>
+</section>
+
+<!-- EXPENSES -->
+<section id="sec-expenses" class="section">
+  <div class="page-header">
+    <div><h2>Expenses</h2><p>Track gym running costs &amp; overheads</p></div>
+    <button class="btn btn-primary" onclick="openExpenseModal()"><i class="fas fa-plus"></i> Add Expense</button>
+  </div>
+  <div class="stats-grid" id="exp-stats"></div>
+  <div class="exp-layout">
+    <div>
+      <div class="filter-bar">
+        <select class="fc" id="exp-month-f" onchange="renderExpenses()" style="max-width:200px"></select>
+        <select class="fc" id="exp-cat-f" onchange="renderExpenses()" style="max-width:145px">
+          <option value="">All Categories</option>
+          <option>Rent</option><option>Equipment</option><option>Utilities</option>
+          <option>Salary</option><option>Marketing</option><option>Other</option>
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Title</th><th>Category</th><th>Amount</th><th>Date</th><th>Notes</th><th>Actions</th></tr></thead>
+          <tbody id="exp-tbody"></tbody>
+        </table>
+        <div class="empty" id="exp-empty" style="display:none"><i class="fas fa-receipt"></i><p>No expenses found</p></div>
+      </div>
+    </div>
+    <div id="exp-sidebar"></div>
+  </div>
 </section>
 
 </main>
@@ -699,6 +783,38 @@
   </div>
 </div>
 
+<!-- EXPENSE MODAL -->
+<div class="overlay" id="modal-expense">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header"><h3 id="exp-modal-title">Add Expense</h3><button class="close-btn" onclick="closeModal('modal-expense')">✕</button></div>
+    <div class="form-row">
+      <div class="form-group"><label>Title *</label><input type="text" class="fc" id="ex-title" placeholder="Monthly Rent"></div>
+      <div class="form-group"><label>Category</label><select class="fc" id="ex-cat"><option>Rent</option><option>Equipment</option><option>Utilities</option><option>Salary</option><option>Marketing</option><option>Other</option></select></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Amount (₹) *</label><input type="number" class="fc" id="ex-amount" placeholder="15000"></div>
+      <div class="form-group"><label>Date *</label><input type="date" class="fc" id="ex-date"></div>
+    </div>
+    <div class="form-group"><label>Notes</label><textarea class="fc" id="ex-notes" rows="2" placeholder="Optional details…"></textarea></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-expense')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveExpense()"><i class="fas fa-save"></i> Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- RECEIPT MODAL -->
+<div class="overlay" id="modal-receipt">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-header"><h3>🧾 Fee Receipt</h3><button class="close-btn" onclick="closeModal('modal-receipt')">✕</button></div>
+    <div class="receipt-box" id="receipt-content"></div>
+    <div class="modal-footer" style="margin-top:14px">
+      <button class="btn btn-ghost" onclick="closeModal('modal-receipt')">Close</button>
+      <button class="btn btn-primary" onclick="printReceipt()"><i class="fas fa-print"></i> Print</button>
+    </div>
+  </div>
+</div>
+
 <div class="toasts" id="toasts"></div>
 
 <script>
@@ -709,7 +825,7 @@ const PLAN_PRICE={Monthly:1200,Quarterly:3000,Annual:10000};
 const BARCOLS=['#c8f542','#f5a742','#42f57e','#c8f542','#f5c842','#4299f5'];
 
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
-function loadDB(){const s=localStorage.getItem(LS);if(s){try{DB=JSON.parse(s)}catch(e){seedDB()}}else{seedDB()}if(!DB.members)DB.members=[]}
+function loadDB(){const s=localStorage.getItem(LS);if(s){try{DB=JSON.parse(s)}catch(e){seedDB()}}else{seedDB()}if(!DB.members)DB.members=[];if(!DB.attendance)DB.attendance=[];if(!DB.expenses)DB.expenses=[];}
 function saveDB(){localStorage.setItem(LS,JSON.stringify(DB))}
 function todayStr(){return new Date().toISOString().split('T')[0]}
 function pad(n){return String(n).padStart(2,'0')}
@@ -754,6 +870,22 @@ function seedDB(){
     {id:uid(),name:'Kavya Reddy',phone:'9866778899',source:'WhatsApp',interest:'Weight Loss',status:'called',assigned:'',budget:2500,followup:'2026-05-30',notes:'Evening slots',addedDate:'2026-05-24'},
     {id:uid(),name:'Manish Joshi',phone:'9877889900',source:'Instagram',interest:'Muscle Building',status:'new',assigned:'',budget:2000,followup:'2026-06-02',notes:'Instagram DM',addedDate:'2026-05-25'},
   ];
+  const cm=todayStr().slice(0,7);
+  const lmD=new Date();lmD.setMonth(lmD.getMonth()-1);
+  const lm=`${lmD.getFullYear()}-${pad(lmD.getMonth()+1)}`;
+  DB.expenses=[
+    {id:uid(),title:'Monthly Rent',category:'Rent',amount:25000,date:`${cm}-01`,notes:'Main hall + parking'},
+    {id:uid(),title:'Staff Salaries',category:'Salary',amount:95000,date:`${cm}-01`,notes:'5 staff members'},
+    {id:uid(),title:'Electricity Bill',category:'Utilities',amount:8500,date:`${cm}-05`,notes:''},
+    {id:uid(),title:'New Dumbbells (20kg × 4)',category:'Equipment',amount:12000,date:`${cm}-10`,notes:''},
+    {id:uid(),title:'Instagram & Facebook Ads',category:'Marketing',amount:3500,date:`${cm}-12`,notes:'Lead gen campaign'},
+    {id:uid(),title:'Water & Internet',category:'Utilities',amount:2200,date:`${cm}-15`,notes:''},
+    {id:uid(),title:'Monthly Rent',category:'Rent',amount:25000,date:`${lm}-01`,notes:''},
+    {id:uid(),title:'Staff Salaries',category:'Salary',amount:95000,date:`${lm}-01`,notes:''},
+    {id:uid(),title:'Electricity Bill',category:'Utilities',amount:9200,date:`${lm}-06`,notes:''},
+    {id:uid(),title:'Protein Supplements (Resale Stock)',category:'Equipment',amount:18000,date:`${lm}-14`,notes:''},
+    {id:uid(),title:'Google Ads',category:'Marketing',amount:2500,date:`${lm}-20`,notes:''},
+  ];
   DB.templates=[
     {id:uid(),name:'Welcome New Member',cat:'Welcome',body:`🎉 Welcome to *{gym}*, {name}!\n\nWe're thrilled to have you in our fitness family! 💪\n\n📋 Plan: {plan}\n📅 Start: {date}\n🏋️ Hours: Mon–Sat 6AM – 10PM\n\n— Team {gym} 🔥`},
     {id:uid(),name:'First Contact (Lead)',cat:'Follow-up',body:`Hi {name}! 👋\n\nThanks for your interest in *{gym}*!\n\n🏋️ Top equipment\n👨‍💼 Expert trainers\n🕕 Flexible timings\n\nBook a *FREE trial* today! 😊`},
@@ -763,6 +895,15 @@ function seedDB(){
     {id:uid(),name:'Event Announcement',cat:'Event',body:`🎉 *BIG EVENT at {gym}!*\n\nHey {name}:\n📅 Date: *{date}*\n🏆 Fitness Challenge & Prizes!\n💰 Prizes worth ₹{amount}+\n\nFREE entry for members! 📝`},
     {id:uid(),name:'Missed Call Follow-up',cat:'Follow-up',body:`Hi {name} 👋\n\nWe tried reaching you but couldn't connect.\n\nFree tour of *{gym}*? Just reply!\n\n— Team {gym}`},
     {id:uid(),name:'Post-Enrollment Welcome',cat:'Welcome',body:`Welcome aboard, {name}! 🎊\n\nJourney starts NOW at *{gym}*!\n🗓 First session: {date}\n\n*Every rep counts.* 💪`},
+  ];
+  DB.attendance=[
+    ...DB.members.slice(0,7).map(m=>({id:uid(),memberId:m.id,date:todayStr()})),
+    ...DB.members.slice(0,5).map(m=>({id:uid(),memberId:m.id,date:dOff(-1)})),
+    ...DB.members.slice(0,8).map(m=>({id:uid(),memberId:m.id,date:dOff(-2)})),
+    ...DB.members.slice(0,6).map(m=>({id:uid(),memberId:m.id,date:dOff(-3)})),
+    ...DB.members.slice(0,4).map(m=>({id:uid(),memberId:m.id,date:dOff(-4)})),
+    ...DB.members.slice(0,9).map(m=>({id:uid(),memberId:m.id,date:dOff(-5)})),
+    ...DB.members.slice(0,7).map(m=>({id:uid(),memberId:m.id,date:dOff(-6)})),
   ];
   saveDB();
 }
@@ -779,10 +920,12 @@ function nav(sec){
   if(sec==='calendar')renderCalendar();
   if(sec==='leads')renderLeads();
   if(sec==='whatsapp')renderTemplates();
+  if(sec==='attendance'){initAttDate();renderAttendance();}
+  if(sec==='expenses'){initExpMonths();renderExpenses();}
 }
 
 /* MODAL */
-let eStaffId=null,eLeadId=null,eTmplId=null,eMemberId=null;
+let eStaffId=null,eLeadId=null,eTmplId=null,eMemberId=null,eExpenseId=null;
 function openModal(id){document.getElementById(id).classList.add('show')}
 function closeModal(id){
   document.getElementById(id).classList.remove('show');
@@ -790,6 +933,7 @@ function closeModal(id){
   if(id==='modal-lead')eLeadId=null;
   if(id==='modal-tmpl')eTmplId=null;
   if(id==='modal-member')eMemberId=null;
+  if(id==='modal-expense')eExpenseId=null;
 }
 document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)closeModal(o.id)}));
 
@@ -905,6 +1049,7 @@ function renderMembers(){
       <td><div class="actions">
         <button class="btn-icon wa" onclick="sendMemberWA('${m.id}')" title="WhatsApp">💬</button>
         <button class="btn-icon rn" onclick="renewMember('${m.id}')" title="Renew">🔄</button>
+        <button class="btn-icon" onclick="openReceipt('${m.id}')" title="Receipt" style="color:var(--yellow)"><i class="fas fa-receipt"></i></button>
         <button class="btn-icon" onclick="openMemberModal('${m.id}')" title="Edit"><i class="fas fa-edit"></i></button>
         <button class="btn-icon dl" onclick="deleteMember('${m.id}')" title="Delete"><i class="fas fa-trash"></i></button>
       </div></td>
@@ -1237,6 +1382,178 @@ function renderDashboard(){
 function refreshBadges(){
   document.getElementById('leads-badge').textContent=DB.leads.filter(l=>l.status==='new').length;
   document.getElementById('members-badge').textContent=DB.members.filter(m=>['expiring','expired'].includes(memStatus(daysLeft(m.join,m.plan)))).length;
+}
+
+/* ATTENDANCE */
+function initAttDate(){const el=document.getElementById('att-date');if(el&&!el.value)el.value=todayStr();}
+function resetAttDate(){document.getElementById('att-date').value=todayStr();renderAttendance();}
+function isPresent(memberId,date){return DB.attendance.some(a=>a.memberId===memberId&&a.date===date);}
+function toggleAttendance(memberId,date){
+  if(isPresent(memberId,date)){DB.attendance=DB.attendance.filter(a=>!(a.memberId===memberId&&a.date===date));}
+  else{DB.attendance.push({id:uid(),memberId,date});}
+  saveDB();renderAttendance();
+}
+function monthAttCount(memberId){
+  const pfx=todayStr().slice(0,7);
+  return DB.attendance.filter(a=>a.memberId===memberId&&a.date.startsWith(pfx)).length;
+}
+function renderAttendance(){
+  initAttDate();
+  const date=document.getElementById('att-date').value||todayStr();
+  const q=v('att-search').toLowerCase();
+  const pf=document.getElementById('att-plan-f')?.value||'all';
+  const members=DB.members.filter(m=>{
+    const st=memStatus(daysLeft(m.join,m.plan));
+    return st!=='expired'&&(!q||(m.name.toLowerCase().includes(q)||m.phone.includes(q)))&&(pf==='all'||m.plan===pf);
+  });
+  const presentCount=members.filter(m=>isPresent(m.id,date)).length;
+  const monthPfx=todayStr().slice(0,7);
+  const monthTotal=DB.attendance.filter(a=>a.date.startsWith(monthPfx)).length;
+  const uniqueDays=[...new Set(DB.attendance.filter(a=>a.date.startsWith(monthPfx)).map(a=>a.date))].length;
+  document.getElementById('att-stats').innerHTML=`
+    <div class="stat-card c-green"><div class="label">Present</div><div class="value">${presentCount}</div><div class="sub">Checked in this day</div></div>
+    <div class="stat-card c-red"><div class="label">Absent</div><div class="value">${members.length-presentCount}</div><div class="sub">Not checked in</div></div>
+    <div class="stat-card c-accent"><div class="label">Active Members</div><div class="value">${members.length}</div><div class="sub">Eligible today</div></div>
+    <div class="stat-card c-blue"><div class="label">Month Check-ins</div><div class="value">${monthTotal}</div><div class="sub">Across ${uniqueDays} days</div></div>`;
+  const tbody=document.getElementById('att-tbody');
+  const empty=document.getElementById('att-empty');
+  if(!members.length){tbody.innerHTML='';empty.style.display='block';return;}
+  empty.style.display='none';
+  tbody.innerHTML=members.map((m,i)=>{
+    const present=isPresent(m.id,date);
+    const mc=monthAttCount(m.id);
+    const d=daysLeft(m.join,m.plan);const st=memStatus(d);
+    const pCls=m.plan==='Monthly'?'pm':m.plan==='Quarterly'?'pq':'pa';
+    const pct=Math.min(100,Math.round((mc/30)*100));
+    return`<tr>
+      <td style="color:var(--muted2);font-size:11px">${i+1}</td>
+      <td><div style="font-family:'Syne',sans-serif;font-weight:700;font-size:12.5px">${m.name}</div><div style="font-size:10.5px;color:var(--muted)">${m.phone}</div></td>
+      <td><span class="badge ${pCls}">${m.plan}</span></td>
+      <td><span class="sbadge s-${st}"><span class="sdot"></span>${d>0?d+'d left':'Expiring'}</span></td>
+      <td>
+        <button class="att-toggle ${present?'att-present':'att-absent'}" onclick="toggleAttendance('${m.id}','${date}')">
+          <span class="att-dot"></span>${present?'✓ Present':'Mark Present'}
+        </button>
+      </td>
+      <td>
+        <div style="font-size:11.5px;margin-bottom:4px;color:${mc>20?'var(--green)':mc>10?'var(--yellow)':'var(--muted)'}">${mc} days this month</div>
+        <div class="att-bar"><div class="att-bar-bg"><div class="att-bar-fill" style="width:${pct}%"></div></div><span style="font-size:10px;color:var(--muted2);flex-shrink:0">${pct}%</span></div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+/* EXPENSES */
+const EXP_CATS=['Rent','Equipment','Utilities','Salary','Marketing','Other'];
+const EXP_COL={Rent:'var(--red)',Equipment:'var(--blue)',Utilities:'var(--yellow)',Salary:'var(--purple)',Marketing:'var(--accent)',Other:'var(--muted)'};
+
+function initExpMonths(){
+  const sel=document.getElementById('exp-month-f');if(!sel)return;
+  const cur=sel.value;const opts=[];const today=new Date();
+  for(let i=0;i<6;i++){const d=new Date(today.getFullYear(),today.getMonth()-i,1);const val=`${d.getFullYear()}-${pad(d.getMonth()+1)}`;const lbl=d.toLocaleString('en-IN',{month:'long',year:'numeric'});opts.push(`<option value="${val}"${i===0?' selected':''}>${i===0?'This Month — ':i===1?'Last Month — ':''}${lbl}</option>`);}
+  sel.innerHTML=opts.join('');
+  if(cur)sel.value=cur;
+}
+function openExpenseModal(id=null){
+  eExpenseId=id;document.getElementById('exp-modal-title').textContent=id?'Edit Expense':'Add Expense';
+  if(id){const e=DB.expenses.find(x=>x.id===id);if(!e)return;document.getElementById('ex-title').value=e.title;document.getElementById('ex-cat').value=e.category;document.getElementById('ex-amount').value=e.amount;document.getElementById('ex-date').value=e.date;document.getElementById('ex-notes').value=e.notes||'';}
+  else{['ex-title','ex-amount','ex-notes'].forEach(i=>document.getElementById(i).value='');document.getElementById('ex-date').value=todayStr();document.getElementById('ex-cat').value='Rent';}
+  openModal('modal-expense');
+}
+function saveExpense(){
+  const title=v('ex-title'),amount=v('ex-amount');
+  if(!title||!amount){toast('Title and amount required!','error');return;}
+  const obj={id:eExpenseId||uid(),title,category:v('ex-cat'),amount:+amount,date:v('ex-date')||todayStr(),notes:v('ex-notes')};
+  if(eExpenseId){DB.expenses=DB.expenses.map(e=>e.id===eExpenseId?obj:e);toast('Expense updated!');}
+  else{DB.expenses.push(obj);toast('Expense added!');}
+  saveDB();closeModal('modal-expense');renderExpenses();
+}
+function deleteExpense(id){
+  const e=DB.expenses.find(x=>x.id===id);
+  if(!confirm(`Delete "${e?.title}"?`))return;
+  DB.expenses=DB.expenses.filter(x=>x.id!==id);saveDB();renderExpenses();toast('Deleted.','info');
+}
+function renderExpenses(){
+  initExpMonths();
+  const mf=document.getElementById('exp-month-f')?.value||todayStr().slice(0,7);
+  const cf=document.getElementById('exp-cat-f')?.value||'';
+  const filtered=DB.expenses.filter(e=>e.date.startsWith(mf)&&(!cf||e.category===cf)).sort((a,b)=>b.date.localeCompare(a.date));
+  const cmPfx=todayStr().slice(0,7);
+  const lmD=new Date();lmD.setMonth(lmD.getMonth()-1);
+  const lmPfx=`${lmD.getFullYear()}-${pad(lmD.getMonth()+1)}`;
+  const curTotal=DB.expenses.filter(e=>e.date.startsWith(cmPfx)).reduce((s,e)=>s+e.amount,0);
+  const lastTotal=DB.expenses.filter(e=>e.date.startsWith(lmPfx)).reduce((s,e)=>s+e.amount,0);
+  const ytd=DB.expenses.filter(e=>e.date.startsWith(String(new Date().getFullYear()))).reduce((s,e)=>s+e.amount,0);
+  const mfTotal=DB.expenses.filter(e=>e.date.startsWith(mf)).reduce((s,e)=>s+e.amount,0);
+  const diff=curTotal-lastTotal;const diffStr=(diff>=0?'+':'')+fmtINR(diff);
+  document.getElementById('exp-stats').innerHTML=`
+    <div class="stat-card c-red"><div class="label">This Month</div><div class="value">${fmtINR(curTotal)}</div><div class="sub" style="color:${diff>0?'var(--red)':'var(--green)'">${diffStr} vs last month</div></div>
+    <div class="stat-card c-orange"><div class="label">Last Month</div><div class="value">${fmtINR(lastTotal)}</div><div class="sub">Previous period</div></div>
+    <div class="stat-card c-yellow"><div class="label">YTD Spend</div><div class="value">${fmtINR(ytd)}</div><div class="sub">${new Date().getFullYear()} so far</div></div>
+    <div class="stat-card c-blue"><div class="label">Total Entries</div><div class="value">${DB.expenses.length}</div><div class="sub">All recorded</div></div>`;
+  const tbody=document.getElementById('exp-tbody');
+  const empty=document.getElementById('exp-empty');
+  if(!filtered.length){tbody.innerHTML='';empty.style.display='block';}
+  else{
+    empty.style.display='none';
+    tbody.innerHTML=filtered.map(e=>`<tr>
+      <td><strong style="font-family:'Syne',sans-serif">${e.title}</strong></td>
+      <td><span class="badge" style="background:${EXP_COL[e.category]||EXP_COL.Other}18;color:${EXP_COL[e.category]||EXP_COL.Other};border:1px solid ${EXP_COL[e.category]||EXP_COL.Other}30">${e.category}</span></td>
+      <td><strong style="color:var(--red)">₹${e.amount.toLocaleString('en-IN')}</strong></td>
+      <td style="color:var(--muted);font-size:11.5px">${fmtDate(e.date)}</td>
+      <td style="color:var(--muted);font-size:11.5px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.notes||'—'}</td>
+      <td><div class="actions">
+        <button class="btn-icon" onclick="openExpenseModal('${e.id}')"><i class="fas fa-edit"></i></button>
+        <button class="btn-icon dl" onclick="deleteExpense('${e.id}')"><i class="fas fa-trash"></i></button>
+      </div></td>
+    </tr>`).join('');
+  }
+  const catTotals={};EXP_CATS.forEach(c=>{catTotals[c]=DB.expenses.filter(e=>e.date.startsWith(mf)&&e.category===c).reduce((s,e)=>s+e.amount,0);});
+  const sorted=Object.entries(catTotals).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
+  document.getElementById('exp-sidebar').innerHTML=`
+    <div class="table-wrap">
+      <div class="exp-total-box">
+        <div class="exp-total-lbl">Period Total</div>
+        <div class="exp-total-val">${fmtINR(mfTotal)}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:3px">${filtered.length} entries</div>
+      </div>
+      <div style="padding:11px 14px">
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:9px">By Category</div>
+        ${sorted.length?sorted.map(([cat,amt])=>{const pct=mfTotal?Math.round((amt/mfTotal)*100):0;return`<div class="cat-row"><div class="exp-cat-dot" style="background:${EXP_COL[cat]||EXP_COL.Other}"></div><div style="flex:1">${cat}</div><div style="font-size:10px;color:var(--muted2);margin-right:7px">${pct}%</div><div class="cat-amt" style="color:${EXP_COL[cat]||EXP_COL.Other}">₹${amt.toLocaleString('en-IN')}</div></div>`;}).join(''):'<div style="text-align:center;padding:18px;color:var(--muted);font-size:12px">No data for this period</div>'}
+      </div>
+    </div>`;
+}
+
+/* RECEIPT */
+function openReceipt(id){
+  const m=DB.members.find(x=>x.id===id);if(!m)return;
+  const rNum=`RCP-${m.phone.slice(-4)}-${Date.now().toString().slice(-5)}`;
+  const amt=m.amount||PLAN_PRICE[m.plan];
+  const expDt=fmtDate(expiryDate(m.join,m.plan));
+  document.getElementById('receipt-content').innerHTML=`
+    <div class="receipt-head">
+      <div class="receipt-gym">🏋️ GymOS</div>
+      <div style="font-size:11px;color:#777;margin-top:2px;font-weight:500;letter-spacing:.5px">OFFICIAL FEE RECEIPT</div>
+    </div>
+    <div class="receipt-row"><span style="color:#666">Receipt No.</span><strong>${rNum}</strong></div>
+    <div class="receipt-row"><span style="color:#666">Issue Date</span><strong>${fmtDate(todayStr())}</strong></div>
+    <div style="height:8px"></div>
+    <div class="receipt-row"><span style="color:#666">Member Name</span><strong>${m.name}</strong></div>
+    <div class="receipt-row"><span style="color:#666">Phone</span><strong>${m.phone}</strong></div>
+    <div style="height:8px"></div>
+    <div class="receipt-row"><span style="color:#666">Plan</span><strong>${m.plan} (${PLAN_DAYS[m.plan]} days)</strong></div>
+    <div class="receipt-row"><span style="color:#666">Join Date</span><strong>${fmtDate(m.join)}</strong></div>
+    <div class="receipt-row"><span style="color:#666">Valid Till</span><strong>${expDt}</strong></div>
+    <div class="receipt-row total"><span>Amount Paid</span><span style="color:#16a34a;font-size:16px">₹${amt.toLocaleString('en-IN')}</span></div>
+    <div style="text-align:center;margin-top:18px;padding-top:14px;border-top:1px dashed #ddd;font-size:11px;color:#888">Thank you for choosing GymOS! 💪<br>Stay fit, stay strong.</div>`;
+  openModal('modal-receipt');
+}
+function printReceipt(){
+  const content=document.getElementById('receipt-content').innerHTML;
+  const w=window.open('','_blank','width=420,height=640');
+  w.document.write(`<!DOCTYPE html><html><head><title>Fee Receipt — GymOS</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Courier New',monospace;background:#fff;padding:24px;font-size:12px;color:#111}.rh{text-align:center;margin-bottom:16px;padding-bottom:14px;border-bottom:2px dashed #ccc}.rg{font-size:20px;font-weight:900;letter-spacing:-0.5px}.row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #f0f0f0;margin-bottom:4px}.tot{border-top:2px solid #111;border-bottom:none;margin-top:10px;padding-top:10px;font-size:14px;font-weight:700}.foot{text-align:center;margin-top:18px;padding-top:14px;border-top:1px dashed #ccc;font-size:11px;color:#888}</style></head><body>${content}</body></html>`);
+  w.document.close();w.focus();
+  setTimeout(()=>{w.print();},300);
 }
 
 document.addEventListener('DOMContentLoaded',()=>{loadDB();calNow=new Date();refreshBadges();nav('dashboard');});
