@@ -818,8 +818,8 @@
 <div class="toasts" id="toasts"></div>
 
 <script>
-let DB={members:[],staff:[],events:[],leads:[],templates:[]};
-const LS='gymos-p1-v3';
+let DB={members:[],staff:[],events:[],leads:[],templates:[],attendance:[],expenses:[]};
+const LS='gymos-p1-v4';
 const PLAN_DAYS={Monthly:30,Quarterly:90,Annual:365};
 const PLAN_PRICE={Monthly:1200,Quarterly:3000,Annual:10000};
 const BARCOLS=['#c8f542','#f5a742','#42f57e','#c8f542','#f5c842','#4299f5'];
@@ -1399,8 +1399,10 @@ function monthAttCount(memberId){
 }
 function renderAttendance(){
   initAttDate();
-  const date=document.getElementById('att-date').value||todayStr();
-  const q=v('att-search').toLowerCase();
+  const dateEl=document.getElementById('att-date');
+  if(!dateEl)return;
+  const date=dateEl.value||todayStr();
+  const q=(v('att-search')||'').toLowerCase();
   const pf=document.getElementById('att-plan-f')?.value||'all';
   const members=DB.members.filter(m=>{
     const st=memStatus(daysLeft(m.join,m.plan));
@@ -1475,7 +1477,9 @@ function deleteExpense(id){
 }
 function renderExpenses(){
   initExpMonths();
-  const mf=document.getElementById('exp-month-f')?.value||todayStr().slice(0,7);
+  const expMonthEl=document.getElementById('exp-month-f');
+  if(!expMonthEl)return;
+  const mf=expMonthEl.value||todayStr().slice(0,7);
   const cf=document.getElementById('exp-cat-f')?.value||'';
   const filtered=DB.expenses.filter(e=>e.date.startsWith(mf)&&(!cf||e.category===cf)).sort((a,b)=>b.date.localeCompare(a.date));
   const cmPfx=todayStr().slice(0,7);
@@ -1485,9 +1489,12 @@ function renderExpenses(){
   const lastTotal=DB.expenses.filter(e=>e.date.startsWith(lmPfx)).reduce((s,e)=>s+e.amount,0);
   const ytd=DB.expenses.filter(e=>e.date.startsWith(String(new Date().getFullYear()))).reduce((s,e)=>s+e.amount,0);
   const mfTotal=DB.expenses.filter(e=>e.date.startsWith(mf)).reduce((s,e)=>s+e.amount,0);
-  const diff=curTotal-lastTotal;const diffStr=(diff>=0?'+':'')+fmtINR(diff);
+  const diff=curTotal-lastTotal;
+  const diffSign=diff>0?'+':diff<0?'−':'';
+  const diffStr=diffSign+fmtINR(Math.abs(diff));
+  const diffCol=diff>0?'var(--red)':diff<0?'var(--green)':'var(--muted)';
   document.getElementById('exp-stats').innerHTML=`
-    <div class="stat-card c-red"><div class="label">This Month</div><div class="value">${fmtINR(curTotal)}</div><div class="sub" style="color:${diff>0?'var(--red)':'var(--green)'">${diffStr} vs last month</div></div>
+    <div class="stat-card c-red"><div class="label">This Month</div><div class="value">${fmtINR(curTotal)}</div><div class="sub" style="color:${diffCol}">${diffStr} vs last</div></div>
     <div class="stat-card c-orange"><div class="label">Last Month</div><div class="value">${fmtINR(lastTotal)}</div><div class="sub">Previous period</div></div>
     <div class="stat-card c-yellow"><div class="label">YTD Spend</div><div class="value">${fmtINR(ytd)}</div><div class="sub">${new Date().getFullYear()} so far</div></div>
     <div class="stat-card c-blue"><div class="label">Total Entries</div><div class="value">${DB.expenses.length}</div><div class="sub">All recorded</div></div>`;
