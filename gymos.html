@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GymOS — Phase 1</title>
+  <title>GYM.R.E.N — Phase 1</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -326,8 +326,8 @@
 <!-- SIDEBAR -->
 <aside class="sidebar">
   <div class="logo">
-    <div class="logo-icon">GO</div>
-    <div><h1>GymOS</h1><span>Phase 1</span></div>
+    <div class="logo-icon">GR</div>
+    <div><h1>GYM.R.E.N</h1><span>Phase 1</span></div>
   </div>
   <nav>
     <div class="nav-item active" onclick="nav('dashboard')"><i class="fas fa-chart-pie"></i><span>Dashboard</span></div>
@@ -339,7 +339,7 @@
     <div class="nav-item" onclick="nav('attendance')"><i class="fas fa-calendar-check"></i><span>Attendance</span></div>
     <div class="nav-item" onclick="nav('expenses')"><i class="fas fa-receipt"></i><span>Expenses</span></div>
   </nav>
-  <div class="sidebar-footer">GymOS v1.0</div>
+  <div class="sidebar-footer">GYM.R.E.N v1.0</div>
 </aside>
 
 <main class="main">
@@ -407,7 +407,7 @@
       <div class="ai-panel">
         <div class="ai-header">
           <div class="ai-icon">✦</div>
-          <div><div class="ai-title">GymOS AI</div><div class="ai-sub">Claude · knows your gym data</div></div>
+          <div><div class="ai-title">GYM.R.E.N AI</div><div class="ai-sub">Claude · knows your gym data</div></div>
         </div>
         <div class="ai-key-row">
           <input class="ai-key-inp" id="ai-key" placeholder="Paste Anthropic API key…" type="password">
@@ -678,7 +678,7 @@
     <div class="autosend-msg-row" id="autosend-msg-row">
       <div class="form-group" style="margin-top:10px;margin-bottom:0">
         <label>Auto Message Content</label>
-        <textarea class="fc" id="e-automsg" rows="3" placeholder="e.g. 📢 Reminder: '{title}' is tomorrow. Please prepare accordingly. — GymOS"></textarea>
+        <textarea class="fc" id="e-automsg" rows="3" placeholder="e.g. 📢 Reminder: '{title}' is tomorrow. Please prepare accordingly. — GYM.R.E.N"></textarea>
         <div style="font-size:10.5px;color:var(--muted);margin-top:5px">💡 Use <code style="color:var(--accent)">{title}</code> <code style="color:var(--accent)">{date}</code> <code style="color:var(--accent)">{type}</code> as placeholders</div>
       </div>
     </div>
@@ -1004,7 +1004,7 @@ function exportMembersCSV(){
   const rows=[['Name','Phone','Plan','Join Date','Expiry Date','Days Left','Status','Amount']];
   DB.members.forEach(m=>{const d=daysLeft(m.join,m.plan);rows.push([m.name,m.phone,m.plan,m.join,expiryDate(m.join,m.plan),d,memStatus(d),m.amount||PLAN_PRICE[m.plan]]);});
   const blob=new Blob([rows.map(r=>r.join(',')).join('\n')],{type:'text/csv'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`GymOS_Members_${todayStr()}.csv`;a.click();
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`GYMREN_Members_${todayStr()}.csv`;a.click();
   toast('CSV exported! ⬇');
 }
 
@@ -1066,7 +1066,7 @@ function buildCtx(){
   const expiring=DB.members.filter(m=>memStatus(daysLeft(m.join,m.plan))==='expiring').length;
   const expired=DB.members.filter(m=>memStatus(daysLeft(m.join,m.plan))==='expired').length;
   const rev=DB.members.filter(m=>['active','expiring'].includes(memStatus(daysLeft(m.join,m.plan)))).reduce((s,m)=>s+(m.amount||PLAN_PRICE[m.plan]),0);
-  return `You are GymOS AI — gym management assistant for Indian gym owners.
+  return `You are GYM.R.E.N AI — gym management assistant for Indian gym owners.
 MEMBERS (${DB.members.length}):
 ${DB.members.map(m=>{const d=daysLeft(m.join,m.plan);return`- ${m.name} | ${m.phone} | ${m.plan} | Days left:${d} | ${memStatus(d)} | ₹${m.amount||PLAN_PRICE[m.plan]}`;}).join('\n')}
 SUMMARY: Total:${DB.members.length} Active:${active} Expiring:${expiring} Expired:${expired} Revenue:₹${rev.toLocaleString('en-IN')}
@@ -1297,7 +1297,7 @@ function prefillLeadMsg(type){
     intro:`Hi ${n}! 👋\n\nThanks for your interest in our gym!\nWe'd love to help with ${int} training.\n\n🏋️ Top equipment  |  👨‍💼 Expert trainers  |  🕕 Flexible timings\n\nBook a FREE trial today! 💪`,
     followup:`Hi ${n}! 👋\n\nJust checking in — are you still interested in joining?\nWe have great ${int} programs starting soon!\n\nLet me know if you'd like to visit. 😊`,
     offer:`Hi ${n}! 🔥\n\nSPECIAL OFFER just for you!\n\n🎯 ${int} package — limited time deal\n✅ Free PT session included\n✅ Flexible timings\n\nReply YES to claim it! 💪`,
-    enrolled:`Welcome, ${n}! 🎉\n\nYou're officially part of our gym family!\nYour ${int} journey starts NOW.\n💪 Every rep counts!\n\n— Team GymOS 🏋️`
+    enrolled:`Welcome, ${n}! 🎉\n\nYou're officially part of our gym family!\nYour ${int} journey starts NOW.\n💪 Every rep counts!\n\n— Team GYM.R.E.N 🏋️`
   };
   document.getElementById('lmsg-body').value=msgs[type]||msgs.intro;
 }
@@ -1539,7 +1539,7 @@ function openReceipt(id){
   const expDt=fmtDate(expiryDate(m.join,m.plan));
   document.getElementById('receipt-content').innerHTML=`
     <div class="receipt-head">
-      <div class="receipt-gym">🏋️ GymOS</div>
+      <div class="receipt-gym">🏋️ GYM.R.E.N</div>
       <div style="font-size:11px;color:#777;margin-top:2px;font-weight:500;letter-spacing:.5px">OFFICIAL FEE RECEIPT</div>
     </div>
     <div class="receipt-row"><span style="color:#666">Receipt No.</span><strong>${rNum}</strong></div>
@@ -1552,13 +1552,13 @@ function openReceipt(id){
     <div class="receipt-row"><span style="color:#666">Join Date</span><strong>${fmtDate(m.join)}</strong></div>
     <div class="receipt-row"><span style="color:#666">Valid Till</span><strong>${expDt}</strong></div>
     <div class="receipt-row total"><span>Amount Paid</span><span style="color:#16a34a;font-size:16px">₹${amt.toLocaleString('en-IN')}</span></div>
-    <div style="text-align:center;margin-top:18px;padding-top:14px;border-top:1px dashed #ddd;font-size:11px;color:#888">Thank you for choosing GymOS! 💪<br>Stay fit, stay strong.</div>`;
+    <div style="text-align:center;margin-top:18px;padding-top:14px;border-top:1px dashed #ddd;font-size:11px;color:#888">Thank you for choosing GYM.R.E.N! 💪<br>Stay fit, stay strong.</div>`;
   openModal('modal-receipt');
 }
 function printReceipt(){
   const content=document.getElementById('receipt-content').innerHTML;
   const w=window.open('','_blank','width=420,height=640');
-  w.document.write(`<!DOCTYPE html><html><head><title>Fee Receipt — GymOS</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Courier New',monospace;background:#fff;padding:24px;font-size:12px;color:#111}.rh{text-align:center;margin-bottom:16px;padding-bottom:14px;border-bottom:2px dashed #ccc}.rg{font-size:20px;font-weight:900;letter-spacing:-0.5px}.row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #f0f0f0;margin-bottom:4px}.tot{border-top:2px solid #111;border-bottom:none;margin-top:10px;padding-top:10px;font-size:14px;font-weight:700}.foot{text-align:center;margin-top:18px;padding-top:14px;border-top:1px dashed #ccc;font-size:11px;color:#888}</style></head><body>${content}</body></html>`);
+  w.document.write(`<!DOCTYPE html><html><head><title>Fee Receipt — GYM.R.E.N</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Courier New',monospace;background:#fff;padding:24px;font-size:12px;color:#111}.rh{text-align:center;margin-bottom:16px;padding-bottom:14px;border-bottom:2px dashed #ccc}.rg{font-size:20px;font-weight:900;letter-spacing:-0.5px}.row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #f0f0f0;margin-bottom:4px}.tot{border-top:2px solid #111;border-bottom:none;margin-top:10px;padding-top:10px;font-size:14px;font-weight:700}.foot{text-align:center;margin-top:18px;padding-top:14px;border-top:1px dashed #ccc;font-size:11px;color:#888}</style></head><body>${content}</body></html>`);
   w.document.close();w.focus();
   setTimeout(()=>{w.print();},300);
 }
